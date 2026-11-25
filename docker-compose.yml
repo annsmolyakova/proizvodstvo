@@ -1,0 +1,22 @@
+
+services:
+  postgres:
+    image: postgres:17
+    container_name: prodmaster-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: prodmaster
+      POSTGRES_USER: prodmaster
+      POSTGRES_PASSWORD: prodmaster_dev_password
+    ports:
+      - "5433:5432"
+    volumes:
+      - prodmaster_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U prodmaster -d prodmaster"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  prodmaster_postgres_data:

@@ -1,0 +1,331 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ProductionOrderStatus {
+  DRAFT
+  PLANNED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum ProductionOperationStatus {
+  PLANNED
+  IN_PROGRESS
+  COMPLETED
+  PAUSED
+  CANCELLED
+}
+
+enum EquipmentStatus {
+  AVAILABLE
+  IN_USE
+  MAINTENANCE
+  DECOMMISSIONED
+}
+
+enum InventoryTransactionType {
+  RECEIPT
+  ISSUE
+  RESERVATION
+  RELEASE
+  ADJUSTMENT
+}
+
+enum MaintenanceStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+model User {
+  id              String   @id @default(uuid()) @db.Uuid
+  identitySubject String?  @unique
+  email           String   @unique
+  fullName        String
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now()) @db.Timestamptz(3)
+
+  roles                 UserRole[]
+  employee              Employee?
+  createdOrders         ProductionOrder[]      @relation("OrderCreator")
+  inventoryTransactions InventoryTransaction[]
+  notifications         Notification[]
+  auditLogs             AuditLog[]
+
+  @@map("users")
+}
+
+model UserRole {
+  id       String @id @default(uuid()) @db.Uuid
+  userId   String @db.Uuid
+  roleName String
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, roleName])
+  @@map("user_roles")
+}
+
+model Department {
+  id                String  @id @default(uuid()) @db.Uuid
+  name              String  @unique
+  description       String?
+  managerEmployeeId String? @db.Uuid
+  isActive          Boolean @default(true)
+
+  manager          Employee?         @relation("DepartmentManager", fields: [managerEmployeeId], references: [id], onDelete: SetNull)
+  employees        Employee[]        @relation("DepartmentEmployees")
+  equipment        Equipment[]
+  productionOrders ProductionOrder[]
+
+  @@map("departments")
+}
+
+model Employee {
+  id              String  @id @default(uuid()) @db.Uuid
+  personnelNumber String  @unique
+  fullName        String
+  position        String
+  departmentId    String  @db.Uuid
+  userId          String? @unique @db.Uuid
+  isActive        Boolean @default(true)
+
+  department           Department            @relation("DepartmentEmployees", fields: [departmentId], references: [id], onDelete: Restrict)
+  user                 User?                 @relation(fields: [userId], references: [id], onDelete: SetNull)
+  managedDepartments   Department[]          @relation("DepartmentManager")
+  productionOperations ProductionOperation[]
+  inspections          QualityInspection[]
+
+  @@map("employees")
+}
+
+model Product {
+  id          String  @id @default(uuid()) @db.Uuid
+  sku         String  @unique
+  name        String
+  description String?
+  category    String?
+  unit        String
+  isActive    Boolean @default(true)
+
+  operations ProductOperation[]
+  orders     ProductionOrder[]
+
+  @@map("products")
+}
+
+model ProductOperation {
+  id                     String  @id @default(uuid()) @db.Uuid
+  productId              String  @db.Uuid
+  name                   String
+  sequenceNumber         Int
+  plannedDurationMinutes Int?
+  description            String?
+
+  product              Product               @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productionOperations ProductionOperation[]
+
+  @@unique([productId, sequenceNumber])
+  @@map("product_operations")
+}
+
+model Material {
+  id           String  @id @default(uuid()) @db.Uuid
+  sku          String  @unique
+  name         String
+  unit         String
+  description  String?
+  minimumStock Decimal @default(0) @db.Decimal(18, 3)
+  isActive     Boolean @default(true)
+
+  balances     InventoryBalance[]
+  transactions InventoryTransaction[]
+
+  @@map("materials")
+}
+
+model Equipment {
+  id              String          @id @default(uuid()) @db.Uuid
+  inventoryNumber String          @unique
+  name            String
+  type            String
+  departmentId    String          @db.Uuid
+  status          EquipmentStatus @default(AVAILABLE)
+  commissionedAt  DateTime?       @db.Timestamptz(3)
+
+  department           Department             @relation(fields: [departmentId], references: [id], onDelete: Restrict)
+  productionOperations ProductionOperation[]
+  maintenance          EquipmentMaintenance[]
+
+  @@map("equipment")
+}
+
+model Warehouse {
+  id       String  @id @default(uuid()) @db.Uuid
+  name     String
+  location String?
+  isActive Boolean @default(true)
+
+  balances     InventoryBalance[]
+  transactions InventoryTransaction[]
+
+  @@map("warehouses")
+}
+
+model InventoryBalance {
+  id               String   @id @default(uuid()) @db.Uuid
+  warehouseId      String   @db.Uuid
+  materialId       String   @db.Uuid
+  quantity         Decimal  @default(0) @db.Decimal(18, 3)
+  reservedQuantity Decimal  @default(0) @db.Decimal(18, 3)
+  updatedAt        DateTime @updatedAt @db.Timestamptz(3)
+
+  warehouse Warehouse @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
+  material  Material  @relation(fields: [materialId], references: [id], onDelete: Restrict)
+
+  @@unique([warehouseId, materialId])
+  @@map("inventory_balances")
+}
+
+model InventoryTransaction {
+  id                String                   @id @default(uuid()) @db.Uuid
+  warehouseId       String                   @db.Uuid
+  materialId        String                   @db.Uuid
+  transactionType   InventoryTransactionType
+  quantity          Decimal                  @db.Decimal(18, 3)
+  productionOrderId String?                  @db.Uuid
+  userId            String                   @db.Uuid
+  createdAt         DateTime                 @default(now()) @db.Timestamptz(3)
+  comment           String?
+
+  warehouse       Warehouse        @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
+  material        Material         @relation(fields: [materialId], references: [id], onDelete: Restrict)
+  productionOrder ProductionOrder? @relation(fields: [productionOrderId], references: [id], onDelete: SetNull)
+  user            User             @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([productionOrderId])
+  @@index([createdAt])
+  @@map("inventory_transactions")
+}
+
+model ProductionOrder {
+  id                String                @id @default(uuid()) @db.Uuid
+  orderNumber       String                @unique
+  productId         String                @db.Uuid
+  departmentId      String                @db.Uuid
+  plannedQuantity   Decimal               @db.Decimal(18, 3)
+  completedQuantity Decimal               @default(0) @db.Decimal(18, 3)
+  startDate         DateTime?             @db.Timestamptz(3)
+  dueDate           DateTime              @db.Timestamptz(3)
+  status            ProductionOrderStatus @default(DRAFT)
+  createdByUserId   String                @db.Uuid
+  createdAt         DateTime              @default(now()) @db.Timestamptz(3)
+
+  product               Product                @relation(fields: [productId], references: [id], onDelete: Restrict)
+  department            Department             @relation(fields: [departmentId], references: [id], onDelete: Restrict)
+  createdBy             User                   @relation("OrderCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  operations            ProductionOperation[]
+  inspections           QualityInspection[]
+  inventoryTransactions InventoryTransaction[]
+
+  @@index([status])
+  @@index([dueDate])
+  @@map("production_orders")
+}
+
+model ProductionOperation {
+  id                 String                    @id @default(uuid()) @db.Uuid
+  productionOrderId  String                    @db.Uuid
+  productOperationId String?                   @db.Uuid
+  name               String
+  sequenceNumber     Int
+  equipmentId        String?                   @db.Uuid
+  employeeId         String?                   @db.Uuid
+  plannedQuantity    Decimal                   @db.Decimal(18, 3)
+  completedQuantity  Decimal                   @default(0) @db.Decimal(18, 3)
+  status             ProductionOperationStatus @default(PLANNED)
+  startedAt          DateTime?                 @db.Timestamptz(3)
+  completedAt        DateTime?                 @db.Timestamptz(3)
+
+  productionOrder  ProductionOrder     @relation(fields: [productionOrderId], references: [id], onDelete: Cascade)
+  productOperation ProductOperation?   @relation(fields: [productOperationId], references: [id], onDelete: SetNull)
+  equipment        Equipment?          @relation(fields: [equipmentId], references: [id], onDelete: SetNull)
+  employee         Employee?           @relation(fields: [employeeId], references: [id], onDelete: SetNull)
+  inspections      QualityInspection[]
+
+  @@unique([productionOrderId, sequenceNumber])
+  @@index([status])
+  @@map("production_operations")
+}
+
+model QualityInspection {
+  id                    String   @id @default(uuid()) @db.Uuid
+  productionOrderId     String   @db.Uuid
+  productionOperationId String?  @db.Uuid
+  inspectorEmployeeId   String   @db.Uuid
+  inspectedQuantity     Decimal  @db.Decimal(18, 3)
+  acceptedQuantity      Decimal  @db.Decimal(18, 3)
+  rejectedQuantity      Decimal  @db.Decimal(18, 3)
+  defectDescription     String?
+  createdAt             DateTime @default(now()) @db.Timestamptz(3)
+
+  productionOrder     ProductionOrder      @relation(fields: [productionOrderId], references: [id], onDelete: Cascade)
+  productionOperation ProductionOperation? @relation(fields: [productionOperationId], references: [id], onDelete: SetNull)
+  inspector           Employee             @relation(fields: [inspectorEmployeeId], references: [id], onDelete: Restrict)
+
+  @@index([createdAt])
+  @@map("quality_inspections")
+}
+
+model Notification {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  title     String
+  message   String
+  type      String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead])
+  @@map("notifications")
+}
+
+model AuditLog {
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String?  @db.Uuid
+  action     String
+  entityName String
+  entityId   String
+  details    Json?
+  createdAt  DateTime @default(now()) @db.Timestamptz(3)
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([entityName, entityId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+model EquipmentMaintenance {
+  id              String            @id @default(uuid()) @db.Uuid
+  equipmentId     String            @db.Uuid
+  maintenanceType String
+  description     String?
+  scheduledAt     DateTime          @db.Timestamptz(3)
+  completedAt     DateTime?         @db.Timestamptz(3)
+  status          MaintenanceStatus @default(SCHEDULED)
+
+  equipment Equipment @relation(fields: [equipmentId], references: [id], onDelete: Restrict)
+
+  @@index([scheduledAt])
+  @@map("equipment_maintenance")
+}

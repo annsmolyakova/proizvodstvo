@@ -1,0 +1,64 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Build output
+dist/
+**/dist/
+build/
+**/build/
+coverage/
+**/coverage/
+
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# Runtime files
+*.pid
+*.seed
+*.pid.lock
+
+# Operating system
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.idea/
+.vscode/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Temporary files
+.tmp/
+.temp/
+.cache/
+
+# Test artifacts
+playwright-report/
+test-results/
+
+# Local databases and generated files
+*.sqlite
+*.sqlite3
+*.db
+
+# AI coding assistant files
+**/.agents/
+**/.claude/
+
+# TypeScript build cache
+*.tsbuildinfo**/.agents/
+**/.claude/
+*.tsbuildinfo
