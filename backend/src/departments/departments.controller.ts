@@ -1,6 +1,8 @@
+
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Post,
@@ -37,5 +39,10 @@ export class DepartmentsController {
     @Body() dto: UpdateDepartmentDto,
   ) {
     return this.departmentsService.update(id, dto);
+  }
+
+  @Delete(':id')
+  remove(@Param('id') id: string) {
+    return this.departmentsService.remove(id);
   }
 }

@@ -1,3 +1,4 @@
+
 import {
   Injectable,
   NotFoundException,
@@ -155,5 +156,16 @@ export class DepartmentsService {
 
       throw error;
     }
+  }
+
+  async remove(id: string) {
+    await this.findOne(id);
+
+    return this.prisma.department.update({
+      where: { id },
+      data: {
+        isActive: false,
+      },
+    });
   }
 }
