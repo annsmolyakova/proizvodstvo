@@ -7,6 +7,7 @@ import { DepartmentsModule } from './departments/departments.module.js';
 import { EmployeesModule } from './employees/employees.module.js';
 import { EquipmentModule } from './equipment/equipment.module.js';
 import { WarehousesModule } from './warehouses/warehouses.module.js';
+import { MaterialsModule } from './materials/materials.module.js';
 
 export const { ObserveModule, ObserveInstrument } = createObserveModule();
 
@@ -22,6 +23,7 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
     EmployeesModule,
     EquipmentModule,
     WarehousesModule,
+    MaterialsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
