@@ -8,6 +8,7 @@ import { EmployeesModule } from './employees/employees.module.js';
 import { EquipmentModule } from './equipment/equipment.module.js';
 import { WarehousesModule } from './warehouses/warehouses.module.js';
 import { MaterialsModule } from './materials/materials.module.js';
+import { InventoryModule } from './inventory/inventory.module.js';
 
 export const { ObserveModule, ObserveInstrument } = createObserveModule();
 
@@ -24,6 +25,7 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
     EquipmentModule,
     WarehousesModule,
     MaterialsModule,
+    InventoryModule,
   ],
   controllers: [AppController],
   providers: [AppService],
