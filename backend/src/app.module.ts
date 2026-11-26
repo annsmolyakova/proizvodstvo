@@ -1,4 +1,3 @@
-
 import { Module } from '@nestjs/common';
 import { createObserveModule } from '@nestjs/observe';
 import { AppController } from './app.controller.js';
@@ -6,6 +5,7 @@ import { AppService } from './app.service.js';
 import { PrismaModule } from './prisma/prisma.module.js';
 import { DepartmentsModule } from './departments/departments.module.js';
 import { EmployeesModule } from './employees/employees.module.js';
+import { EquipmentModule } from './equipment/equipment.module.js';
 
 export const { ObserveModule, ObserveInstrument } = createObserveModule();
 
@@ -19,6 +19,7 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
     PrismaModule,
     DepartmentsModule,
     EmployeesModule,
+    EquipmentModule,
   ],
   controllers: [AppController],
   providers: [AppService],
