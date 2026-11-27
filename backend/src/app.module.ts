@@ -10,6 +10,7 @@ import { WarehousesModule } from './warehouses/warehouses.module.js';
 import { MaterialsModule } from './materials/materials.module.js';
 import { InventoryModule } from './inventory/inventory.module.js';
 import { ProductsModule } from './products/products.module.js';
+import { ProductOperationsModule } from './product-operations/product-operations.module.js';
 
 export const { ObserveModule, ObserveInstrument } = createObserveModule();
 
@@ -28,6 +29,7 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
     MaterialsModule,
     InventoryModule,
     ProductsModule,
+    ProductOperationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
